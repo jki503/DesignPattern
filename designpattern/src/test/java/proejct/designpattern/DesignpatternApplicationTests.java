@@ -1,13 +1,13 @@
-package com.designpattern.excode;
+package proejct.designpattern;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ExcodeApplicationTests {
+class DesignpatternApplicationTests {
 
-    @Test
-    void contextLoads() {
-    }
+	@Test
+	void contextLoads() {
+	}
 
 }
