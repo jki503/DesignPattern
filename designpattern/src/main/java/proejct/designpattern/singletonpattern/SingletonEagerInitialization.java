@@ -1,4 +1,4 @@
-package com.designpattern.excode.singleton;
+package proejct.designpattern.singletonpattern;
 
 public class SingletonEagerInitialization {
     private static final SingletonEagerInitialization instance = new SingletonEagerInitialization();

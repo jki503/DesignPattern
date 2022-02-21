@@ -1,4 +1,4 @@
-package com.designpattern.excode.singleton;
+package proejct.designpattern.singletonpattern;
 
 public class SingletonSynchronized{
     private static SingletonSynchronized instance;
