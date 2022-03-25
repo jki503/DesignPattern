@@ -3,7 +3,7 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
-./src/main/java/me.whiteship.designpatterns/**
+/src/main/java/me/whiteship/designpatterns/
 
 ### STS ###
 .apt_generated
