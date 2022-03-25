@@ -2,13 +2,31 @@
 
 </br>
 
-> 구현체를 생성하기 위한 인터페이스를 정의 하고, 어떤 클래스의 인스턴스를 생성할 것인지 처리해주는 디자인 패턴
-
-</br>
-
 |                       UML                       |
 | :---------------------------------------------: |
 | ![factory method img](./res/factory_method.png) |
+
+</br>
+
+- Java 8부터 interface에 default 메소드
+- Java 9부터 interface에 private 메소드 추가
+- interface에 pulblic 명시 안해줘도 되는 이유
+
+</br>
+
+> 구현체를 생성하기 위한 인터페이스를 정의 하고,  
+> 어떤 클래스의 인스턴스를 생성할 것인지 처리해주는 디자인 패턴
+
+</br>
+
+- story
+
+</br>
+
+> 흰배를 만드는 공장이 너무 잘돼서 추후에 검은 배를 만들기로 했다.  
+> 처음에는 쉽팩토리에 흰배와 검은 배를 분리하여 생선하는 로직.  
+> 그러나 생성과 비즈니스 로직이 너무 몰려있고,  
+> 두 개의 타입일 때는 그나마 낫지만 빨간색 배는? 남색 배는?
 
 </br>
 
@@ -20,173 +38,106 @@
 
 </br>
 
-- 예제 코드 및 패키지 구조
+- 단점
+
+> 구조가 커질 수록 하위 클래스의 재정의로 클래스 수가 늘어난다...
 
 </br>
 
-- factory
-  - config
-    - UnitCreator.java
-  - type
-    - UnitType.java
-  - unit
-    - Unit.java
-    - LandUnit.java
-    - SwimUnit.java
-    - FlyUnit.java
-  - Main.java (팩토리 메서드 적용한 클라이언트)
-  - Main2.java (그냥 생성 로직 다 처리하는 클라이언트)
+- 예제 코드 및 다이어그램
 
 </br>
 
-</br>
-
-```java
-
-public interface Unit {
-
-    void move();
-    void attack();
-}
-
-public class LandUnit implements Unit{
-    @Override
-    public void move() {
-        System.out.println("땅에서 뜁니다.");
-    }
-
-    @Override
-    public void attack() {
-        System.out.println("지상에서 공격합니다.");
-    }
-}
-
-public class FlyUnit implements Unit{
-
-    @Override
-    public void move() {
-        System.out.println("하늘을 날아요!");
-    }
-
-    @Override
-    public void attack() {
-        System.out.println("하늘에서 공격해요!");
-    }
-}
-
-public class SwimUnit implements Unit{
-
-    @Override
-    public void move() {
-        System.out.println("수중에서 움직입니다.");
-    }
-
-    @Override
-    public void attack() {
-        System.out.println("수중에서 공격합니다.");
-    }
-}
-```
-
-- 하나의 클래스가 생성과 비즈니스 책임을 갖는 경우.
-
-```java
-public class Main2 {
-
-    public static void main(String[] args) {
-
-        Unit land = new LandUnit();
-        Unit swim = new LandUnit();
-        Unit fly = new LandUnit();
-
-        land.attack();
-        swim.attack();
-        fly.attack();
-    }
-
-}
-
-```
-
-> 위의 경우가 생성의 책임 유닛의 액션 역할의 책임을 보여주는 예시.  
-> 모든 구조들이 그렇듯 역할이 중첩되면 유지보수 할 때 side effect가 크다..
+![factory ship](./res/factory_method_ship.png)
 
 </br>
+
+> 1. Client는 Factory 선택한다(Enum Type)
+> 2. EnumType을 받은 `FactoryCreator`는 각 선택에 맞는 factory의 instance를 생성한다.
+> 3. 각 factory는 공장에 맞는 배를 만들고 서비스를 제공
+
 </br>
+
 </br>
 
 ```java
 
-public class UnitCreator {
+// 1. 팩토리 타입 선택 하여 팩토리 제공
 
-    public static Unit getUnit(UnitType type){
+public interface FactoryCreator {
 
+    static ShipFactory getInstance(FactoryType type){
         switch (type){
-            case LandUnit: return new LandUnit();
-            case FlyUnit: return new FlyUnit();
-            case SwimUnit: return new SwimUnit();
-            default :
-                throw new IllegalArgumentException("그런 유닛은 없어요!");
+            case WHITE:
+                return new WhiteShipFactory();
+            case BLACK:
+                return new BlackShipFactory();
+            default:
+                throw new IllegalArgumentException("그런 공장은 없다!");
         }
-    }
-
-}
-
-public enum UnitType {
-    LandUnit, FlyUnit, SwimUnit
-}
-
-public class Main {
-
-    public static void main(String[] args) {
-
-        Unit tank = UnitCreator.getUnit(UnitType.LandUnit);
-        Unit submarine = UnitCreator.getUnit(UnitType.SwimUnit);
-        Unit fighter = UnitCreator.getUnit(UnitType.FlyUnit);
-
-        tank.move();
-        tank.attack();
-
-        System.out.println();
-
-        submarine.move();
-        submarine.attack();
-
-        System.out.println();
-
-        fighter.move();
-        fighter.attack();
 
     }
 }
 
 ```
 
-- `UnitCreator` : 사용자로부터 객체 생성의 책임을 위임 받음.
-- `UnitType` : 각 Unit의 enum type을 통해 인스턴스 생성.
+```java
+
+// 2. Client가 선택, Client가 어떤 타입이 있는지 모를 경우 에러 처리 해주고, 또한 Client 단에서 인스턴스를 생성하는 책임을 지우게 하기 싫었음.
+
+public class Client {
+    public static void main(String[] args) {
+
+        ShipFactory shipFactory = FactoryCreator.getInstance(FactoryType.BLACK);
+        print(shipFactory.orderShip("BlackShipByjung","jkixxx@hufs.ac.kr"));
+
+    }
+
+    private static void print(Ship ship){
+        System.out.println(ship);
+    }
+}
+
+```
+
+```java
+
+// 3. 추상체인 ShipFactory를 Client에 뿌리면서 White 및 Black Factory 이후에 다른 공장이 추가되어도 확장에 용이
+
+package jung.whiteship.designpatterns._01_creational_patterns._02_factory_method;
+
+public interface ShipFactory {
+
+    default Ship orderShip(String name, String email){
+        validate(name,email);
+        prepareFor(name);
+        Ship ship = createShip();
+        sendMailTo(email,ship);
+        return ship;
+    }
+
+    private void prepareFor(String name){
+        System.out.println(name + "을 만들 준비 중...");
+    };
+
+    void sendMailTo(String email, Ship ship);
+
+    Ship createShip();
+
+    private void validate(String name, String email){
+
+        if(name == null || name.isBlank())
+            throw new IllegalArgumentException("이름을 적어주세요.");
+
+        if(email == null || email.isBlank())
+            throw new IllegalArgumentException("이메일을 적어주세요");
+    }
+
+}
+
+```
 
 ## 정적 팩토리 메서드
-
-</br>
-
-```java
-
-public class UnitCreator {
-
-    public static Unit getUnit(UnitType type){
-
-        switch (type){
-            case LandUnit: return new LandUnit();
-            case FlyUnit: return new FlyUnit();
-            case SwimUnit: return new SwimUnit();
-            default :
-                throw new IllegalArgumentException("그런 유닛은 없어요!");
-        }
-    }
-
-}
-
-```
 
 </br>
 
@@ -194,40 +145,14 @@ public class UnitCreator {
 
 </br>
 
-> getUnit 함수를 보면 정적 메소드로 정의 한 것을 볼 수 있다.  
+> `FactoryCreator의 getInstance` 함수를 보면 정적 메소드로 정의 한 것을 볼 수 있다.  
 > 사실 개인적으로 정적 메소드로 정의 하지 않으면  
-> `UnitCreator를 위의 Main함수에서 (new)생성`해서  
-> 사용하기 불편하다는 생각으로 일단 만들었는데 어떤 장점이 있는지 찾아보았다.
+> 클라이언트에서 특정 공장을 new 해서 생성하는게 찝찝했다.
 
 </br>
 
-- 메서드의 이름이 주는 의도
-
-</br>
-
-```java
-
-public class Creator{
-
-
-  public static Unit getUnit();
-  public static Unit getWeapon();
-
-}
-
-```
-
-</br>
-
-> 위의 예제에서 확장하여 각 유닛에 무기를 만들어주려고 할 때,
-> 정적 메소드를 정의 할 경우 메소드 명칭만 보고도  
-> `어떤 인스턴스를 반환해주는 것인지에 대해 의도`가 보다 더 잘 전달된다.
-
-</br>
-
-- 객체 생성을 캡슐화 할 수 있다는 장점
-
-> 생성자를 정적 메서드 안으로 숨기면서 내부 상태를 외부에 드러낼 필요가 없다.
+- 객체 생성을 캡슐화하고 은닉화 할 수 있다.
+- 생성의 책임을 아예 외부로 빼주는 방법
 
 </br>
 
