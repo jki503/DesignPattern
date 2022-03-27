@@ -11,146 +11,152 @@
 
 </br>
 
-### **싱글톤 패턴 장점**
+|                                       |
+| :-----------------------------------: |
+| ![singleton img](./res/singleton.png) |
+
+## 구현 방식
 
 </br>
 
-- 메모리 할당 되는 인스턴스가 한 개임으로 메모리 낭비가 적다.
-
-- 설정값이 변경될 위험을 사전에 예방한다.
-
-</br>
-
-### **싱글톤 패턴 고려 해야할 점**
-
-</br>
-
-- 싱글톤은 stateless 해야한다.(not stateful)
-
-> - **짧은 설명**
->
-> - `stateless`: 이전 트랜잭션에 영향을 받으면 안됨. 즉 내부 객체의 설정 값이 변경 되지 않아야 한다.
->
-> - `stateful`: 이전 트랜잭션의 상황에 따라 요청의 영향을 받는다.
->
-> - ex) 결제 서비스에서 고객의 주문 요청을 받은 후 특정 상품의 가격이 변경된다면? -> 굉장히 큰 문제.
-
-- 멀티쓰레드 환경에서의 concurrency 문제를 고려해야한다.
-- Thread-safe 해야한다.
-
-</br>
-
-> - **짧은 설명!**
->
-> `Thread-safe` : 특정 객체가 여러 쓰레드로부터 동시 접근이 발생하여도 프로그램의 실행에 문제가 없는 것.
-
-</br>
-
-### **싱글톤 패턴 구현**
-
-</br>
-
-- `Eager Initialization (static binding)`
-
-</br>
+### Eager Initialization (thread-safe)
 
 ```java
-public class SingletonEagerInitialization {
-    private static final SingletonEagerInitialization instance = new SingletonEagerInitialization();
 
-    private SingletonEagerInitialization(){}
+// Eager initialization
+public class GameSetting1 {
 
-    public static SingletonEagerInitialization getInstance(){
-        return instance;
-    }
+    private static final GameSetting1 INSTANCE = new GameSetting1();
+
+    private GameSetting1(){}
+
 }
+
 ```
 
 </br>
 
-> 클래스 로더가 초기화 할 때  
-> `static binding` (정적바인딩)으로
-> 인스턴스를 컴파일 시점에서 결정하여 사용하는 것.
->
-> 로딩 될 때 객체가 생성 됨으로 Thread-safe
+> 객체 생성이 비싸지 않고, 무조권 사용된다는 보장이 있다면 적합하지만  
+> 기본적으로 static 변수기 때문에, 인스턴스를 사용한다는 보장이 없다면  
+> 효율적인 방법은 아니다.
 
-- `Lazy Initialization with Synchronized (dynamic binding)`
+</br>
+
+### Lazy Initialization (thread-safe X)
 
 </br>
 
 ```java
-public class SingletonSynchronized{
-    private static SingletonSynchronized instance;
 
-    private SingletonSynchronized(){}
+// if 이용 Lazy Initialization
+public class GameSetting2 {
 
-    // synchronized때문에 객체가 생성되었음에도 lock이 걸리는 상황.
-    private static synchronized SingletonSynchronized getInstance(){
-        if(instance == null){
-            instance = new SingletonSynchronized();
-        }
+    private static GameSetting2 instance;
+
+    private GameSetting2(){}
+
+    public static GameSetting2 getInstance(){
+        if(instance == null)
+            instance = new GameSetting2();
+
         return instance;
     }
 }
+
 ```
 
 </br>
 
-> - 메서드에 synchronized로 동기화 블럭 지정 -> Thread-safe
->
-> - 객체가 생성 된 여부와 상관없이 getInstance 메서드에서 동기화 블럭을 거치게 되어 있다. -> 성능 문제
->
-> - 안 좋은 방법.
+> if문을 사용하여 instance가 없다면 생성하는 방식  
+> 동기화 문제가 발생할 수 있는 곳에서 lock을 하지 않고 사용한다면  
+> 단 하나의 인스턴스를 보장하지 못할 수 있다.
 
-- `Lazy Initialization. Double Checking Locking (dynamic binding)`
+### Synchronized
+
+</br>
 
 ```java
-public class SingletonDCL {
-    //volatile 추가
-    private volatile static SingletonDCL instance;
 
-    private SingletonDCL(){}
+// Synchronized
+public class GameSetting3 {
 
-    private static SingletonDCL getInstance(){
+    private static GameSetting3 instance;
+
+    private GameSetting3() {}
+
+    public static synchronized GameSetting3 getInstance(){
+        if(instance == null)
+            instance = new GameSetting3();
+        return instance;
+    }
+}
+
+```
+
+</br>
+
+> getInstance함수에 synchronized 블럭을 하여 임계 구역 문제를 해결한 방식  
+> 함수 자체에 synchronized로 감쌀 경우 lock의 범위가 커져 프로그램의 퍼포먼스가 떨어진다.  
+> 또한 instance가 null일때도 우선적으로 lock이 일어나기 때문에 좋은 방법 X
+
+</br>
+
+### Double checking
+
+</br>
+
+```java
+
+// Double checking
+public class GameSetting4 {
+
+    /*
+    * volatile 키워드는 메인메모리에 저장하여 사용하는 방식
+    * 당연히 메인메모리를 직접 읽어오고 사용하는 방식은 성능상 불리
+    */
+    private static volatile GameSetting4 instance;
+
+    private GameSetting4() {}
+
+    public static GameSetting4 getInstance(){
 
         if(instance == null){
-//          synchrnoized를 객체가 없는 경우에만 적용.
-            synchronized (SingletonDCL.class){
+            synchronized ((GameSetting4.class)){
                 if(instance == null)
-                    instance = new SingletonDCL();
+                    instance = new GameSetting4();
             }
+
         }
         return instance;
     }
+
 }
+
 ```
 
 </br>
 
-> - 위의 getInstance에 동기화 블럭 방식의 단점을 개선.  
->   `동시화 블록을 객체가 없을때만 적용.`
->
-> - volatile 키워드를 사용하여 멀티스레딩을 사용함에도 singleton 인스턴스로 초기화 되는 과정 수행.
->
-> - volatile에 대해
+> synchronized를 instacne가 null일때만 감싸 기존 방식의 개선 방식  
+> 부분 개선책
 
-- `Lazy Initializtion. LazyHolder (dynamic binding)`
+### Holder innerClass
 
 </br>
 
 ```java
-public class SingletonLazyHolder {
 
-    private SingletonLazyHolder(){}
+// inner class
+public class GameSetting5 {
 
-//    1. 내부 클래스 로딩 시점에서 객체 생성
-    private static class InnerClass{
-        private static final SingletonLazyHolder instance = new SingletonLazyHolder();
+    private GameSetting5(){}
+
+    private static class GameSettingHolder{
+        private static final GameSetting5 SETTINGS = new GameSetting5();
+
     }
 
-//    2. 내부 클래스에서 인스턴스 가져오기
-    public static SingletonLazyHolder getInstance(){
-        return InnerClass.instance;
+    public static GameSetting5 getInstance(){
+        return GameSettingHolder.SETTINGS;
     }
 
 }
@@ -159,41 +165,163 @@ public class SingletonLazyHolder {
 
 </br>
 
-> - dynamic binding에 의한 메모리 이점
->
-> - SingletonLazyHolder를 호출 해도 InnerClass의 변수가 없음으로 메모리 이점.
+> 내부에 inner class를 두고 instance를 생성하는 가장 권장되는 방식 중 하나
 
-- `Lazy Initialization. Enum`
+</br>
+
+- inner class를 사용하는 이유
+
+</br>
+
+> GameSetting가 로드 될때 static 필드와 함수는 초기화 지정으로 선정된다.  
+> 그러나, `내부 클래스가 static이라 할지라도 초기화 대상에 포함 되지 않기 때문`에,  
+> getInstance()가 호출 되고 나서 메모리에 로드하고 인스턴스 생성된다.
+
+</br>
+
+> 위의 모든 방법은 reflection과 직렬화의 취약하다.
+
+</br>
+
+- reflection
+
+```java
+
+public class Main {
+
+    public static void main(String[] args) throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+
+        // Holder innerClass 사용
+        GameSetting5 instance = GameSetting5.getInstance();
+
+        Constructor<GameSetting5> constructor = GameSetting5.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+
+        GameSetting5 instance2 = constructor.newInstance();
+
+        if(instance == instance2)
+            System.out.println("게임 설정의 인스턴스는 같아요!");
+        else
+            System.out.println("xxxxxxx?");
+
+    }
+
+}
+
+```
+
+</br>
+
+|     reflection로 단일 instacne 보장 깨트리기      |
+| :-----------------------------------------------: |
+| ![reflection](./res/_01_singleton_reflection.png) |
+
+</br>
+
+> reflection은 class 내부의 접근제한자의 권한을 무너뜨려 억지로 사용하는 방법이다.
+> 얼마든지 Client가 깨뜨릴 수 있는 구조.
+
+</br>
+
+- 직렬화
+
+</br>
+
+> 직렬화 역직렬화는 대응이 가능하지만 몇몇 취약한 점들이 있다.  
+> Serializable interface를 상속 받은 후 readResolve 메서드를 통해  
+> 동일 인스턴스를 보장하는 방법. -> 사용자가 신경써야할 코드
+
+</br>
+
+### Enum
+
+```java
+
+// enum type
+public enum GameSetting6 {
+
+    INSTANCE;
+}
+
+```
+
+</br>
+
+> enum은 기본적으로 java.lang.Enum을 상속 받고  
+> Enum이 Serialzable을 상속 받음.  
+> 리플렉션으로 뚫리지 않아 인스턴스를 보장
+>
+> enum 방식은 미리 만들어지고,  
+> enum class는 다른 class를 상속 받을 수 없다.  
+> -> Enum을 이미 상속 받고 있기 때문(interface는 가능하다~)
+
+</br>
+
+### 싱글톤 문제
+
+> 우선적으로 싱글톤은 구현체로 싱글톤 클래스를 사용하는 클래스와의 의존도가 높다.  
+> static 함수는 전역적으로 사용할 수 있기때문에 마구잡이로 write(변경)할 경우  
+> 어디서 잘못 사용되는지 알기 어렵다.  
+> private 생성자는 단일 인스턴스를 보장하기 위해 사용하지만 유연성을 떨어뜨리는 문제도 발생시킴.  
+> read(읽기) 그리고 고정적인 연산만을 호출하여 리턴받는 설정 파일이라면 적합.
 
 </br>
 
 ```java
-public enum SingletonEnum{
-  instance;
+// 잘못된 예
+
+@Getter
+@Setter
+public class WrongGameSetting {
+
+    private String KeySetting;
+    private String os;
+
+    private WrongGameSetting(){}
+
+    private static class WrongGameSettingHolder(){
+        private static final WrongGameSetting SETTING = new WrongGameSetting();
+    }
+
+    public static WrongGameSetting getInstance(){
+        return WrongGameSettingHolder.SETTING;
+    }
+
 }
+
 ```
 
 </br>
 
-> - Reflection에 의한 추가 인스턴스 생성X
-> - Enum 인스턴스 생성은 Thread-safe이지만
-> - Enum내의 메서드가 Thread-safe인지는 개발자의 책임
->
-> - 이 Enum 방식은 상속 X,
-> - Context 의존성이 있는 환경(Android)에서
->   Context 의존성이 끼어들 가능성이 있음.
+> Setter 설정 권한을 주어 프로퍼티를 자유롭게 설정할 수 있는 나쁜 예
 
 </br>
 
-### **싱글톤 패턴 요약**
+```java
 
-> - Singleton 구현시
->   - Thread-safe인지?
->   - stateless인지?
->   - Concurrency를 고려 했는지?
->   - 스프링이 아닌 순수 자바로 구현 할 때 의존성이  
->     맞물리는 문제 주의(private constructor)
+public class Main2 {
+    public static void main(String[] args) {
+
+        WrongGameSetting instance1 = WrongGameSetting.getInstance();
+        WrongGameSetting instance2 = WrongGameSetting.getInstance();
+
+        instance1.setKeySetting("Standard");
+        instance1.setOs("Mac");
+
+        instance2.setKeySetting("Custom");
+        instance2.setOs("Windows7");
+
+        // ???????????
+        System.out.println(instance1.getKeySetting()
+                +"\n" + instance2.getOs());
+
+    }
+}
+
+```
 
 </br>
-</br>
-</br>
+
+> 만일 위와같은 상황에서 구조가 커질 때  
+> 어디서 문제가 발생했는지 알기 힘들다. (IDE 도움 받아서 다 찾는 수 밖에?)
+> 찾아내도 설정을 바꾸어서 이미 다른 class가 사용해 버린 경우??
