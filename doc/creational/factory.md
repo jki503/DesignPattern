@@ -2,9 +2,9 @@
 
 </br>
 
-|                       UML                       |
-| :---------------------------------------------: |
-| ![factory method img](./res/factory_method.png) |
+|                         UML                         |
+| :-------------------------------------------------: |
+| ![factory method img](./res/_02_factory_method.png) |
 
 </br>
 
@@ -48,7 +48,7 @@
 
 </br>
 
-![factory ship](./res/factory_method_ship.png)
+![factory ship](./res/_02_factory_method_ship.png)
 
 </br>
 
